@@ -1,4 +1,9 @@
-pip
 python-dotenv
 ruff
 -e .
+pandas
+numpy
+matplotlib
+seaborn
+kagglehub
+scikit-learn
