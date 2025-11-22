@@ -7,3 +7,6 @@ matplotlib
 seaborn
 kagglehub
 scikit-learn
+scipy
+optuna
+xgboost
