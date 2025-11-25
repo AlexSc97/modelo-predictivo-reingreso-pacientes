@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Predicción de Readmisión de Pacientes</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="background-gradient"></div>
+    
+    <div class="container">
+        <header class="header">
+            <div class="header-icon">🏥</div>
+            <h1 class="header-title">Predicción de Readmisión de Pacientes</h1>
+            <p class="header-subtitle">Sistema de predicción basado en Machine Learning con XGBoost</p>
+        </header>
+
+        <div class="main-content">
+            <div class="card form-card">
+                <div class="card-header">
+                    <h2>Datos del Paciente</h2>
+                    <p>Ingrese los datos clínicos para evaluar el riesgo de readmisión</p>
+                </div>
+
+                <form id="predictionForm" class="prediction-form">
+                    <!-- Numeric Inputs -->
+                    <div class="form-section">
+                        <h3 class="section-title">📊 Historial de Visitas</h3>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="number_inpatient">
+                                    Visitas Hospitalarias
+                                    <span class="tooltip" data-tooltip="Número de veces que el paciente fue hospitalizado como paciente interno en el año anterior. Un mayor número de hospitalizaciones previas está fuertemente asociado con mayor riesgo de readmisión, ya que indica condiciones médicas complejas o crónicas.">ℹ️</span>
+                                </label>
+                                <input type="number" id="number_inpatient" name="number_inpatient" 
+                                       min="0" max="20" value="0" required>
+                                <span class="input-hint">0-20 visitas</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="number_emergency">
+                                    Visitas de Emergencia
+                                    <span class="tooltip" data-tooltip="Número de visitas a la sala de emergencias en el año anterior. Múltiples visitas de emergencia sugieren condiciones médicas inestables o mal controladas, lo que incrementa significativamente el riesgo de readmisión.">ℹ️</span>
+                                </label>
+                                <input type="number" id="number_emergency" name="number_emergency" 
+                                       min="0" max="20" value="0" required>
+                                <span class="input-hint">0-20 visitas</span>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="discharge_disposition_id">
+                                    Tipo de Alta
+                                    <span class="tooltip" data-tooltip="Código que indica el destino del paciente al momento del alta hospitalaria (ej: casa, centro de rehabilitación, otro hospital). Valores más altos pueden indicar situaciones de mayor complejidad que aumentan el riesgo de readmisión.">ℹ️</span>
+                                </label>
+                                <input type="number" id="discharge_disposition_id" name="discharge_disposition_id" 
+                                       min="1" max="30" value="1" required>
+                                <span class="input-hint">1-30</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Binary Inputs -->
+                    <div class="form-section">
+                        <h3 class="section-title">🏥 Especialidad Médica</h3>
+                        <div class="form-row">
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="medical_specialty_Psychiatry" 
+                                           name="medical_specialty_Psychiatry" value="1">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">Psiquiatría</span>
+                                    <span class="tooltip" data-tooltip="Indica si el médico tratante es especialista en Psiquiatría. Los pacientes con condiciones psiquiátricas pueden tener mayor complejidad en el manejo y adherencia al tratamiento, afectando el riesgo de readmisión.">ℹ️</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="medical_specialty_Oncology" 
+                                           name="medical_specialty_Oncology" value="1">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">Oncología</span>
+                                    <span class="tooltip" data-tooltip="Indica si el médico tratante es especialista en Oncología. Los pacientes oncológicos requieren cuidados especializados y tienen mayor riesgo de complicaciones que pueden llevar a readmisión.">ℹ️</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="medical_specialty_PhysicalMedicineandRehabilitation" 
+                                           name="medical_specialty_PhysicalMedicineandRehabilitation" value="1">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">Medicina Física y Rehabilitación</span>
+                                    <span class="tooltip" data-tooltip="Indica si el médico tratante es especialista en Medicina Física y Rehabilitación. Estos pacientes suelen tener condiciones que requieren recuperación prolongada y seguimiento continuo.">ℹ️</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-section">
+                        <h3 class="section-title">🩺 Diagnóstico y Tratamiento</h3>
+                        <div class="form-row">
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="diag_1_group_Musculoskeletal" 
+                                           name="diag_1_group_Musculoskeletal" value="1">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">Diagnóstico: Musculoesquelético</span>
+                                    <span class="tooltip" data-tooltip="El diagnóstico principal pertenece al grupo musculoesquelético (artritis, fracturas, problemas de columna, etc.). Estas condiciones pueden requerir seguimiento prolongado y tienen patrones específicos de readmisión.">ℹ️</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="diag_1_group_Circulatory" 
+                                           name="diag_1_group_Circulatory" value="1">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">Diagnóstico: Circulatorio</span>
+                                    <span class="tooltip" data-tooltip="El diagnóstico principal pertenece al sistema circulatorio (enfermedades cardíacas, hipertensión, problemas vasculares). Estas condiciones son altamente prevalentes en pacientes diabéticos y están asociadas con mayor riesgo de readmisión.">ℹ️</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="diag_2_group_Neoplasms" 
+                                           name="diag_2_group_Neoplasms" value="1">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">Diagnóstico Secundario: Neoplasmas</span>
+                                    <span class="tooltip" data-tooltip="El diagnóstico secundario incluye neoplasmas (tumores benignos o malignos). La presencia de cáncer como condición secundaria aumenta significativamente la complejidad del caso y el riesgo de readmisión.">ℹ️</span>
+                                </label>
+                            </div>
+
+                            <div class="form-group checkbox-group">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="insulin_Down" 
+                                           name="insulin_Down" value="1">
+                                    <span class="checkbox-custom"></span>
+                                    <span class="checkbox-text">Dosis de Insulina Reducida</span>
+                                    <span class="tooltip" data-tooltip="Indica si la dosis de insulina fue reducida durante la hospitalización. Los cambios en la medicación para diabetes pueden afectar el control glucémico y aumentar el riesgo de complicaciones y readmisión.">ℹ️</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <span class="btn-text">Predecir Riesgo de Readmisión</span>
+                            <span class="btn-loader"></span>
+                        </button>
+                        <button type="button" class="btn btn-secondary" id="resetBtn">
+                            Limpiar Formulario
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Results Card -->
+            <div class="card results-card" id="resultsCard" style="display: none;">
+                <div class="card-header">
+                    <h2>Resultado de la Predicción</h2>
+                </div>
+                
+                <div class="results-content">
+                    <div class="risk-indicator" id="riskIndicator">
+                        <div class="risk-icon" id="riskIcon">⚠️</div>
+                        <div class="risk-label" id="riskLabel">Riesgo Alto</div>
+                        <div class="risk-percentage" id="riskPercentage">75%</div>
+                    </div>
+
+                    <div class="probability-bars">
+                        <div class="probability-item">
+                            <div class="probability-header">
+                                <span class="probability-label">Riesgo Bajo</span>
+                                <span class="probability-value" id="lowRiskValue">25%</span>
+                            </div>
+                            <div class="probability-bar">
+                                <div class="probability-fill low-risk" id="lowRiskBar"></div>
+                            </div>
+                        </div>
+
+                        <div class="probability-item">
+                            <div class="probability-header">
+                                <span class="probability-label">Riesgo Alto</span>
+                                <span class="probability-value" id="highRiskValue">75%</span>
+                            </div>
+                            <div class="probability-bar">
+                                <div class="probability-fill high-risk" id="highRiskBar"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendation" id="recommendation">
+                        <h3>💡 Recomendación</h3>
+                        <p id="recommendationText"></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Error Card -->
+            <div class="card error-card" id="errorCard" style="display: none;">
+                <div class="error-icon">❌</div>
+                <h3>Error en la Predicción</h3>
+                <p id="errorMessage"></p>
+                <button class="btn btn-secondary" onclick="document.getElementById('errorCard').style.display='none'">
+                    Cerrar
+                </button>
+            </div>
+        </div>
+
+        <footer class="footer">
+            <p>Modelo XGBoost entrenado con datos de readmisión hospitalaria</p>
+            <p class="footer-small">Sistema de predicción con fines educativos y de investigación</p>
+        </footer>
+    </div>
+
+    <script src="/static/script.js"></script>
+</body>
+</html>
