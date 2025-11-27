@@ -1,220 +1,298 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Predicción de Readmisión de Pacientes</title>
-    <link rel="stylesheet" href="/static/style.css">
+    <title>Modelo Predictivo de Reingreso de Pacientes</title>
+    <link rel="stylesheet" href="/static/style.css?v=12">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
 </head>
+
 <body>
-    <div class="background-gradient"></div>
-    
-    <div class="container">
-        <header class="header">
-            <div class="header-icon">🏥</div>
-            <h1 class="header-title">Predicción de Readmisión de Pacientes</h1>
-            <p class="header-subtitle">Sistema de predicción basado en Machine Learning con XGBoost</p>
-        </header>
+    <div class="background-orb orb-1"></div>
+    <div class="background-orb orb-2"></div>
+    <div class="grid-overlay"></div>
 
-        <div class="main-content">
-            <div class="card form-card">
-                <div class="card-header">
-                    <h2>Datos del Paciente</h2>
-                    <p>Ingrese los datos clínicos para evaluar el riesgo de readmisión</p>
-                </div>
-
-                <form id="predictionForm" class="prediction-form">
-                    <!-- Numeric Inputs -->
-                    <div class="form-section">
-                        <h3 class="section-title">📊 Historial de Visitas</h3>
-                        <div class="form-row">
-                            <div class="form-group">
-                                <label for="number_inpatient">
-                                    Visitas Hospitalarias
-                                    <span class="tooltip" data-tooltip="Número de veces que el paciente fue hospitalizado como paciente interno en el año anterior. Un mayor número de hospitalizaciones previas está fuertemente asociado con mayor riesgo de readmisión, ya que indica condiciones médicas complejas o crónicas.">ℹ️</span>
-                                </label>
-                                <input type="number" id="number_inpatient" name="number_inpatient" 
-                                       min="0" max="20" value="0" required>
-                                <span class="input-hint">0-20 visitas</span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="number_emergency">
-                                    Visitas de Emergencia
-                                    <span class="tooltip" data-tooltip="Número de visitas a la sala de emergencias en el año anterior. Múltiples visitas de emergencia sugieren condiciones médicas inestables o mal controladas, lo que incrementa significativamente el riesgo de readmisión.">ℹ️</span>
-                                </label>
-                                <input type="number" id="number_emergency" name="number_emergency" 
-                                       min="0" max="20" value="0" required>
-                                <span class="input-hint">0-20 visitas</span>
-                            </div>
-
-                            <div class="form-group">
-                                <label for="discharge_disposition_id">
-                                    Tipo de Alta
-                                    <span class="tooltip" data-tooltip="Código que indica el destino del paciente al momento del alta hospitalaria (ej: casa, centro de rehabilitación, otro hospital). Valores más altos pueden indicar situaciones de mayor complejidad que aumentan el riesgo de readmisión.">ℹ️</span>
-                                </label>
-                                <input type="number" id="discharge_disposition_id" name="discharge_disposition_id" 
-                                       min="1" max="30" value="1" required>
-                                <span class="input-hint">1-30</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Binary Inputs -->
-                    <div class="form-section">
-                        <h3 class="section-title">🏥 Especialidad Médica</h3>
-                        <div class="form-row">
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="medical_specialty_Psychiatry" 
-                                           name="medical_specialty_Psychiatry" value="1">
-                                    <span class="checkbox-custom"></span>
-                                    <span class="checkbox-text">Psiquiatría</span>
-                                    <span class="tooltip" data-tooltip="Indica si el médico tratante es especialista en Psiquiatría. Los pacientes con condiciones psiquiátricas pueden tener mayor complejidad en el manejo y adherencia al tratamiento, afectando el riesgo de readmisión.">ℹ️</span>
-                                </label>
-                            </div>
-
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="medical_specialty_Oncology" 
-                                           name="medical_specialty_Oncology" value="1">
-                                    <span class="checkbox-custom"></span>
-                                    <span class="checkbox-text">Oncología</span>
-                                    <span class="tooltip" data-tooltip="Indica si el médico tratante es especialista en Oncología. Los pacientes oncológicos requieren cuidados especializados y tienen mayor riesgo de complicaciones que pueden llevar a readmisión.">ℹ️</span>
-                                </label>
-                            </div>
-
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="medical_specialty_PhysicalMedicineandRehabilitation" 
-                                           name="medical_specialty_PhysicalMedicineandRehabilitation" value="1">
-                                    <span class="checkbox-custom"></span>
-                                    <span class="checkbox-text">Medicina Física y Rehabilitación</span>
-                                    <span class="tooltip" data-tooltip="Indica si el médico tratante es especialista en Medicina Física y Rehabilitación. Estos pacientes suelen tener condiciones que requieren recuperación prolongada y seguimiento continuo.">ℹ️</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-section">
-                        <h3 class="section-title">🩺 Diagnóstico y Tratamiento</h3>
-                        <div class="form-row">
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="diag_1_group_Musculoskeletal" 
-                                           name="diag_1_group_Musculoskeletal" value="1">
-                                    <span class="checkbox-custom"></span>
-                                    <span class="checkbox-text">Diagnóstico: Musculoesquelético</span>
-                                    <span class="tooltip" data-tooltip="El diagnóstico principal pertenece al grupo musculoesquelético (artritis, fracturas, problemas de columna, etc.). Estas condiciones pueden requerir seguimiento prolongado y tienen patrones específicos de readmisión.">ℹ️</span>
-                                </label>
-                            </div>
-
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="diag_1_group_Circulatory" 
-                                           name="diag_1_group_Circulatory" value="1">
-                                    <span class="checkbox-custom"></span>
-                                    <span class="checkbox-text">Diagnóstico: Circulatorio</span>
-                                    <span class="tooltip" data-tooltip="El diagnóstico principal pertenece al sistema circulatorio (enfermedades cardíacas, hipertensión, problemas vasculares). Estas condiciones son altamente prevalentes en pacientes diabéticos y están asociadas con mayor riesgo de readmisión.">ℹ️</span>
-                                </label>
-                            </div>
-
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="diag_2_group_Neoplasms" 
-                                           name="diag_2_group_Neoplasms" value="1">
-                                    <span class="checkbox-custom"></span>
-                                    <span class="checkbox-text">Diagnóstico Secundario: Neoplasmas</span>
-                                    <span class="tooltip" data-tooltip="El diagnóstico secundario incluye neoplasmas (tumores benignos o malignos). La presencia de cáncer como condición secundaria aumenta significativamente la complejidad del caso y el riesgo de readmisión.">ℹ️</span>
-                                </label>
-                            </div>
-
-                            <div class="form-group checkbox-group">
-                                <label class="checkbox-label">
-                                    <input type="checkbox" id="insulin_Down" 
-                                           name="insulin_Down" value="1">
-                                    <span class="checkbox-custom"></span>
-                                    <span class="checkbox-text">Dosis de Insulina Reducida</span>
-                                    <span class="tooltip" data-tooltip="Indica si la dosis de insulina fue reducida durante la hospitalización. Los cambios en la medicación para diabetes pueden afectar el control glucémico y aumentar el riesgo de complicaciones y readmisión.">ℹ️</span>
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="form-actions">
-                        <button type="submit" class="btn btn-primary" id="submitBtn">
-                            <span class="btn-text">Predecir Riesgo de Readmisión</span>
-                            <span class="btn-loader"></span>
-                        </button>
-                        <button type="button" class="btn btn-secondary" id="resetBtn">
-                            Limpiar Formulario
-                        </button>
-                    </div>
-                </form>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar">
+            <div class="brand">
+                <span class="material-icons-round brand-icon">auto_awesome</span>
+                <span class="brand-text">Modelo Predictivo</span>
             </div>
 
-            <!-- Results Card -->
-            <div class="card results-card" id="resultsCard" style="display: none;">
-                <div class="card-header">
-                    <h2>Resultado de la Predicción</h2>
-                </div>
-                
-                <div class="results-content">
-                    <div class="risk-indicator" id="riskIndicator">
-                        <div class="risk-icon" id="riskIcon">⚠️</div>
-                        <div class="risk-label" id="riskLabel">Riesgo Alto</div>
-                        <div class="risk-percentage" id="riskPercentage">75%</div>
+            <nav class="stepper">
+                <div class="step active" data-step="1">
+                    <div class="step-icon"><span class="material-icons-round">history</span></div>
+                    <div class="step-content">
+                        <span class="step-title">Historial</span>
+                        <span class="step-desc">Estancia y visitas</span>
                     </div>
+                </div>
+                <div class="step" data-step="2">
+                    <div class="step-icon"><span class="material-icons-round">person</span></div>
+                    <div class="step-content">
+                        <span class="step-title">Paciente</span>
+                        <span class="step-desc">Datos demográficos</span>
+                    </div>
+                </div>
+                <div class="step" data-step="3">
+                    <div class="step-icon"><span class="material-icons-round">monitor_heart</span></div>
+                    <div class="step-content">
+                        <span class="step-title">Diagnóstico</span>
+                        <span class="step-desc">Cuadro clínico</span>
+                    </div>
+                </div>
+                <div class="step" data-step="4">
+                    <div class="step-icon"><span class="material-icons-round">medication</span></div>
+                    <div class="step-content">
+                        <span class="step-title">Tratamiento</span>
+                        <span class="step-desc">Medicación actual</span>
+                    </div>
+                </div>
+            </nav>
 
-                    <div class="probability-bars">
-                        <div class="probability-item">
-                            <div class="probability-header">
-                                <span class="probability-label">Riesgo Bajo</span>
-                                <span class="probability-value" id="lowRiskValue">25%</span>
-                            </div>
-                            <div class="probability-bar">
-                                <div class="probability-fill low-risk" id="lowRiskBar"></div>
+            <div class="sidebar-footer">
+                <div class="model-status">
+                    <span class="status-dot"></span>
+                    Modelo XGBoost
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            <header class="top-bar">
+                <h1>Evaluación de Riesgo de Readmisión</h1>
+            </header>
+
+            <div class="content-wrapper">
+                <!-- Form Container -->
+                <div class="glass-panel form-panel" id="formPanel">
+                    <form id="predictionForm" class="wizard-form">
+
+                        <!-- Step 1: Historial -->
+                        <div class="wizard-step active" id="step1">
+                            <h2 class="step-header">Historial Hospitalario</h2>
+                            <div class="input-grid">
+                                <div class="input-group" id="group_number_inpatient">
+                                    <label>Visitas Hospitalarias Previas</label>
+                                    <div class="range-wrapper">
+                                        <input type="range" id="number_inpatient" name="number_inpatient" min="0"
+                                            max="20" value="0" oninput="this.nextElementSibling.value = this.value">
+                                        <output>0</output>
+                                    </div>
+                                </div>
+                                <div class="input-group" id="group_number_emergency">
+                                    <label>Visitas de Emergencia</label>
+                                    <div class="range-wrapper">
+                                        <input type="range" id="number_emergency" name="number_emergency" min="0"
+                                            max="20" value="0" oninput="this.nextElementSibling.value = this.value">
+                                        <output>0</output>
+                                    </div>
+                                </div>
+                                <div class="input-group" id="group_time_in_hospital">
+                                    <label>Días en Hospital</label>
+                                    <div class="range-wrapper">
+                                        <input type="range" id="time_in_hospital" name="time_in_hospital" min="1"
+                                            max="14" value="1" oninput="this.nextElementSibling.value = this.value">
+                                        <output>1</output>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="probability-item">
-                            <div class="probability-header">
-                                <span class="probability-label">Riesgo Alto</span>
-                                <span class="probability-value" id="highRiskValue">75%</span>
+                        <!-- Step 2: Demografía -->
+                        <div class="wizard-step" id="step2">
+                            <h2 class="step-header">Datos del Paciente</h2>
+                            <div class="input-grid">
+                                <div class="input-group" id="group_age">
+                                    <label>Edad Aproximada</label>
+                                    <select id="age" name="age" class="custom-select">
+                                        <option value="5">0-10 años</option>
+                                        <option value="15">10-20 años</option>
+                                        <option value="25">20-30 años</option>
+                                        <option value="35">30-40 años</option>
+                                        <option value="45">40-50 años</option>
+                                        <option value="55">50-60 años</option>
+                                        <option value="65">60-70 años</option>
+                                        <option value="75">70-80 años</option>
+                                        <option value="85">80-90 años</option>
+                                        <option value="95">90+ años</option>
+                                    </select>
+                                </div>
+                                <div class="input-group" id="group_discharge_segment">
+                                    <label>Tipo de Alta</label>
+                                    <div class="radio-cards">
+                                        <label class="radio-card">
+                                            <input type="radio" name="discharge_segment" id="discharge_segment"
+                                                value="Discharged to home" checked>
+                                            <div class="card-content">
+                                                <span class="material-icons-round">home</span>
+                                                <span>Domicilio</span>
+                                            </div>
+                                        </label>
+                                        <label class="radio-card">
+                                            <input type="radio" name="discharge_segment" value="Otherwise">
+                                            <div class="card-content">
+                                                <span class="material-icons-round">local_hospital</span>
+                                                <span>Otro / Traslado</span>
+                                            </div>
+                                        </label>
+                                    </div>
+                                </div>
+                                <div class="input-group" id="group_number_diagnoses">
+                                    <label>Número de Diagnósticos</label>
+                                    <div class="number-control">
+                                        <button type="button"
+                                            onclick="document.getElementById('number_diagnoses').stepDown()">-</button>
+                                        <input type="number" id="number_diagnoses" name="number_diagnoses" min="1"
+                                            max="16" value="1" readonly>
+                                        <button type="button"
+                                            onclick="document.getElementById('number_diagnoses').stepUp()">+</button>
+                                    </div>
+                                </div>
                             </div>
-                            <div class="probability-bar">
-                                <div class="probability-fill high-risk" id="highRiskBar"></div>
+                        </div>
+
+                        <!-- Step 3: Diagnósticos -->
+                        <div class="wizard-step" id="step3">
+                            <h2 class="step-header">Cuadro Clínico</h2>
+                            <div class="input-grid">
+                                <div class="input-group" id="group_diag_1_group">
+                                    <label>Diagnóstico Primario</label>
+                                    <select id="diag_1_group" name="diag_1_group" class="custom-select">
+                                        <option value="Diabetes">Diabetes</option>
+                                        <option value="Circulatory">Circulatorio</option>
+                                        <option value="Respiratory">Respiratorio</option>
+                                        <option value="Digestive">Digestivo</option>
+                                        <option value="Injury">Lesión</option>
+                                        <option value="Musculoskeletal">Musculoesquelético</option>
+                                        <option value="Genitourinary">Genitourinario</option>
+                                        <option value="Neoplasms">Neoplasias</option>
+                                        <option value="Other">Otro</option>
+                                    </select>
+                                </div>
+                                <div class="input-group" id="group_diag_2_group">
+                                    <label>Diagnóstico Secundario</label>
+                                    <select id="diag_2_group" name="diag_2_group" class="custom-select">
+                                        <option value="Diabetes">Diabetes</option>
+                                        <option value="Circulatory">Circulatorio</option>
+                                        <option value="Respiratory">Respiratorio</option>
+                                        <option value="Digestive">Digestivo</option>
+                                        <option value="Injury">Lesión</option>
+                                        <option value="Musculoskeletal">Musculoesquelético</option>
+                                        <option value="Genitourinary">Genitourinario</option>
+                                        <option value="Neoplasms">Neoplasias</option>
+                                        <option value="Other">Otro</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Step 4: Medicación -->
+                        <div class="wizard-step" id="step4">
+                            <h2 class="step-header">Medicación</h2>
+                            <div class="input-grid">
+                                <div class="input-group" id="group_diabetesMed">
+                                    <label>Medicación Diabetes</label>
+                                    <div class="toggle-switch">
+                                        <input type="checkbox" id="diabetesMed_toggle">
+                                        <label for="diabetesMed_toggle"></label>
+                                        <span class="toggle-label">No / Sí</span>
+                                    </div>
+                                    <input type="hidden" id="diabetesMed" name="diabetesMed" value="No">
+                                </div>
+                                <div class="input-group" id="group_metformin">
+                                    <label>Metformina</label>
+                                    <select id="metformin" name="metformin" class="custom-select">
+                                        <option value="No">No usa</option>
+                                        <option value="Steady">Estable</option>
+                                        <option value="Up">Aumentó Dosis</option>
+                                        <option value="Down">Redujo Dosis</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Navigation Buttons -->
+                        <div class="wizard-actions">
+                            <button type="button" class="btn btn-text" id="prevBtn" disabled>Atrás</button>
+                            <button type="button" class="btn btn-primary" id="nextBtn">Siguiente</button>
+                            <button type="submit" class="btn btn-submit" id="submitBtn" style="display: none;">
+                                <span>Analizar Riesgo</span>
+                                <span class="material-icons-round">bolt</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Results Panel (Hidden by default) -->
+                <div class="glass-panel results-panel" id="resultsPanel" style="display: none;">
+                    <div class="results-header">
+                        <button class="btn-icon" id="backToForm"><span
+                                class="material-icons-round">arrow_back</span></button>
+                        <h2>Informe de Predicción</h2>
+                    </div>
+
+                    <div class="prediction-outcome-container">
+                        <h1 id="predictionOutcome" class="prediction-outcome"></h1>
+                    </div>
+
+                    <div class="results-grid">
+                        <!-- Top Row: Risk Gauge & Factors Chart -->
+                        <div class="risk-card main-risk">
+                            <div class="risk-circle-wrapper">
+                                <svg class="risk-circle" viewBox="0 0 36 36">
+                                    <path class="circle-bg"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                    <path class="circle-fill" stroke-dasharray="0, 100"
+                                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                                </svg>
+                                <div class="risk-value">
+                                    <span id="riskPercentage">0%</span>
+                                    <span class="risk-label-text">Probabilidad</span>
+                                </div>
+                            </div>
+                            <div class="risk-status" id="riskStatus">Calculando...</div>
+                        </div>
+
+                        <div class="analysis-card">
+                            <h3><span class="material-icons-round">bar_chart</span> Análisis de Factores Clave</h3>
+                            <div class="factors-chart-container">
+                                <div class="factors-list" id="impactList">
+                                    <!-- Injected via JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Bottom Row: Detailed Report -->
+                        <div class="recommendation-card full-width-card">
+                            <h3><span class="material-icons-round">analytics</span> Informe Detallado e Interpretación
+                            </h3>
+                            <div class="report-content">
+                                <p id="recommendationText">El análisis detallado aparecerá aquí.</p>
+                            </div>
+
+                            <div class="action-area">
+                                <button class="btn btn-reset" id="resetBtn">
+                                    <span class="material-icons-round"
+                                        style="font-size: 1rem; vertical-align: middle; margin-right: 5px;">refresh</span>
+                                    Nueva Predicción
+                                </button>
                             </div>
                         </div>
                     </div>
-
-                    <div class="recommendation" id="recommendation">
-                        <h3>💡 Recomendación</h3>
-                        <p id="recommendationText"></p>
-                    </div>
                 </div>
             </div>
-
-            <!-- Error Card -->
-            <div class="card error-card" id="errorCard" style="display: none;">
-                <div class="error-icon">❌</div>
-                <h3>Error en la Predicción</h3>
-                <p id="errorMessage"></p>
-                <button class="btn btn-secondary" onclick="document.getElementById('errorCard').style.display='none'">
-                    Cerrar
-                </button>
-            </div>
-        </div>
-
-        <footer class="footer">
-            <p>Modelo XGBoost entrenado con datos de readmisión hospitalaria</p>
-            <p class="footer-small">Sistema de predicción con fines educativos y de investigación</p>
-        </footer>
+        </main>
     </div>
 
-    <script src="/static/script.js"></script>
+    <script src="/static/script.js?v=12"></script>
 </body>
+
 </html>

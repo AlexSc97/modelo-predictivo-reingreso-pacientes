@@ -1,160 +1,173 @@
-"""
-Flask API for Patient Readmission Prediction Model
-Serves the frontend and provides prediction endpoints using the trained XGBoost model.
-"""
-
 from flask import Flask, request, jsonify, send_from_directory
 from flask_cors import CORS
-import pickle
+import joblib
+import pandas as pd
 import numpy as np
 import os
+import shap
 from pathlib import Path
 
 app = Flask(__name__, static_folder='static')
 CORS(app)
 
-# Load the trained model
-MODEL_PATH = Path(__file__).parent / 'models' / 'top10_model.pkl'
-PIPELINE_PATH = Path(__file__).parent / 'models' / 'model_pipeline.pkl'
+# Rutas de los modelos
+MODEL_PATH = Path(__file__).parent / 'models' / 'xgboost_model.joblib'
 
 model = None
-pipeline = None
-DEMO_MODE = False
 
 def load_model():
-    """Load the trained model and pipeline"""
-    global model, pipeline, DEMO_MODE
+    """Cargar el modelo entrenado"""
+    global model
     try:
-        # Try loading the top10 model first
         if MODEL_PATH.exists():
-            with open(MODEL_PATH, 'rb') as f:
-                model = pickle.load(f)
-            print(f"✓ Model loaded from {MODEL_PATH}")
-        
-        # Try loading the pipeline
-        if PIPELINE_PATH.exists():
-            with open(PIPELINE_PATH, 'rb') as f:
-                pipeline = pickle.load(f)
-            print(f"✓ Pipeline loaded from {PIPELINE_PATH}")
-            
-        if model is None and pipeline is None:
-            raise FileNotFoundError("No model files found")
+            model = joblib.load(MODEL_PATH)
+            print(f"✓ Modelo cargado desde {MODEL_PATH}")
+        else:
+            print(f"ERROR: No se encontró el archivo del modelo en {MODEL_PATH}")
+            # No activamos modo demo, simplemente el modelo queda como None
             
     except Exception as e:
-        print(f"⚠️  Warning: Could not load model: {e}")
-        print("⚠️  Running in DEMO MODE - predictions will be simulated")
-        DEMO_MODE = True
+        print(f"ERROR CRÍTICO: No se pudo cargar el modelo: {e}")
+        model = None
 
-# Load model on startup
-load_model()
+@app.route('/health')
+def health():
+    """Endpoint de verificación de estado"""
+    return jsonify({
+        'status': 'healthy',
+        'model_loaded': model is not None
+    })
 
-# Feature metadata - the 10 most important features
+
+# Las 10 características más importantes
 FEATURES = {
     'number_inpatient': {
         'type': 'integer',
         'min': 0,
         'max': 20,
-        'description': 'Número de veces que el paciente fue hospitalizado como paciente interno en el año anterior. Un mayor número de hospitalizaciones previas está fuertemente asociado con mayor riesgo de readmisión, ya que indica condiciones médicas complejas o crónicas.',
-        'short_label': 'Visitas Hospitalarias'
+        'description': 'Número de hospitalizaciones previas.',
+        'label': 'Visitas Hospitalarias Previas'
     },
-    'discharge_disposition_id': {
-        'type': 'integer',
-        'min': 1,
-        'max': 30,
-        'description': 'Código que indica el destino del paciente al momento del alta hospitalaria (ej: casa, centro de rehabilitación, otro hospital). Valores más altos pueden indicar situaciones de mayor complejidad que aumentan el riesgo de readmisión.',
-        'short_label': 'Tipo de Alta'
+    'discharge_segment': {
+        'type': 'categorical',
+        'options': ['Otherwise', 'Discharged to home'],
+        'description': 'Destino del paciente al ser dado de alta.',
+        'label': 'Tipo de Alta'
+    },
+    'diabetesMed': {
+        'type': 'categorical',
+        'options': ['Yes', 'No'],
+        'description': 'Si el paciente recibe medicación para la diabetes.',
+        'label': 'Medicación para Diabetes'
     },
     'number_emergency': {
         'type': 'integer',
         'min': 0,
         'max': 20,
-        'description': 'Número de visitas a la sala de emergencias en el año anterior. Múltiples visitas de emergencia sugieren condiciones médicas inestables o mal controladas, lo que incrementa significativamente el riesgo de readmisión.',
-        'short_label': 'Visitas de Emergencia'
+        'description': 'Número de visitas a emergencias en el año anterior.',
+        'label': 'Visitas de Emergencia'
     },
-    'medical_specialty_Psychiatry': {
-        'type': 'binary',
-        'min': 0,
-        'max': 1,
-        'description': 'Indica si el médico tratante es especialista en Psiquiatría. Los pacientes con condiciones psiquiátricas pueden tener mayor complejidad en el manejo y adherencia al tratamiento, afectando el riesgo de readmisión.',
-        'short_label': 'Especialidad: Psiquiatría'
+    'metformin': {
+        'type': 'categorical',
+        'options': ['No', 'Steady', 'Up', 'Down'],
+        'description': 'Uso de Metformina.',
+        'label': 'Metformina'
     },
-    'diag_1_group_Musculoskeletal': {
-        'type': 'binary',
-        'min': 0,
-        'max': 1,
-        'description': 'El diagnóstico principal pertenece al grupo musculoesquelético (artritis, fracturas, problemas de columna, etc.). Estas condiciones pueden requerir seguimiento prolongado y tienen patrones específicos de readmisión.',
-        'short_label': 'Diagnóstico: Musculoesquelético'
+    'diag_1_group': {
+        'type': 'categorical',
+        'options': ['Diabetes', 'Other', 'Neoplasms', 'Circulatory', 'Respiratory', 'Injury', 'Musculoskeletal', 'Digestive', 'Genitourinary'],
+        'description': 'Grupo de diagnóstico primario.',
+        'label': 'Diagnóstico Primario'
     },
-    'diag_2_group_Neoplasms': {
-        'type': 'binary',
-        'min': 0,
-        'max': 1,
-        'description': 'El diagnóstico secundario incluye neoplasmas (tumores benignos o malignos). La presencia de cáncer como condición secundaria aumenta significativamente la complejidad del caso y el riesgo de readmisión.',
-        'short_label': 'Diagnóstico Secundario: Neoplasmas'
+    'diag_2_group': {
+        'type': 'categorical',
+        'options': ['Diabetes', 'Other', 'Neoplasms', 'Circulatory', 'Respiratory', 'Injury', 'Musculoskeletal', 'Digestive', 'Genitourinary'],
+        'description': 'Grupo de diagnóstico secundario.',
+        'label': 'Diagnóstico Secundario'
     },
-    'medical_specialty_Oncology': {
-        'type': 'binary',
-        'min': 0,
-        'max': 1,
-        'description': 'Indica si el médico tratante es especialista en Oncología. Los pacientes oncológicos requieren cuidados especializados y tienen mayor riesgo de complicaciones que pueden llevar a readmisión.',
-        'short_label': 'Especialidad: Oncología'
+    'number_diagnoses': {
+        'type': 'integer',
+        'min': 1,
+        'max': 16,
+        'description': 'Número total de diagnósticos registrados.',
+        'label': 'Número de Diagnósticos'
     },
-    'medical_specialty_PhysicalMedicineandRehabilitation': {
-        'type': 'binary',
-        'min': 0,
-        'max': 1,
-        'description': 'Indica si el médico tratante es especialista en Medicina Física y Rehabilitación. Estos pacientes suelen tener condiciones que requieren recuperación prolongada y seguimiento continuo.',
-        'short_label': 'Especialidad: Medicina Física y Rehabilitación'
+    'age': {
+        'type': 'categorical', # Tratamos la edad como categórica/ordinal para el dropdown
+        'options': [5, 15, 25, 35, 45, 55, 65, 75, 85, 95],
+        'description': 'Edad del paciente (punto medio del rango decenal).',
+        'label': 'Edad'
     },
-    'insulin_Down': {
-        'type': 'binary',
-        'min': 0,
-        'max': 1,
-        'description': 'Indica si la dosis de insulina fue reducida durante la hospitalización. Los cambios en la medicación para diabetes pueden afectar el control glucémico y aumentar el riesgo de complicaciones y readmisión.',
-        'short_label': 'Dosis de Insulina Reducida'
-    },
-    'diag_1_group_Circulatory': {
-        'type': 'binary',
-        'min': 0,
-        'max': 1,
-        'description': 'El diagnóstico principal pertenece al sistema circulatorio (enfermedades cardíacas, hipertensión, problemas vasculares). Estas condiciones son altamente prevalentes en pacientes diabéticos y están asociadas con mayor riesgo de readmisión.',
-        'short_label': 'Diagnóstico: Circulatorio'
+    'time_in_hospital': {
+        'type': 'integer',
+        'min': 1,
+        'max': 14,
+        'description': 'Días de estancia en el hospital.',
+        'label': 'Días en Hospital'
     }
 }
 
 FEATURE_ORDER = [
     'number_inpatient',
-    'discharge_disposition_id',
+    'discharge_segment',
+    'diabetesMed',
     'number_emergency',
-    'medical_specialty_Psychiatry',
-    'diag_1_group_Musculoskeletal',
-    'diag_2_group_Neoplasms',
-    'medical_specialty_Oncology',
-    'medical_specialty_PhysicalMedicineandRehabilitation',
-    'insulin_Down',
-    'diag_1_group_Circulatory'
+    'metformin',
+    'diag_1_group',
+    'diag_2_group',
+    'number_diagnoses',
+    'age',
+    'time_in_hospital'
 ]
 
+def update_feature_importance():
+    """Actualizar la importancia de las características desde el modelo"""
+    global FEATURES, model
+    if model is not None:
+        try:
+            xgb_model = model.named_steps['xgb']
+            # Obtener importancia (gain)
+            importance = xgb_model.feature_importances_
+            
+            # Mapear importancia a las características originales
+            # Esto es una aproximación ya que OneHotEncoder expande las características
+            # Asignaremos la importancia máxima de las columnas codificadas a la característica original
+            
+            preprocessor = model.named_steps['preprocessor']
+            feature_names_out = preprocessor.get_feature_names_out()
+            
+            # Crear mapa de feature original -> max importancia
+            temp_importance = {k: 0.0 for k in FEATURES.keys()}
+            
+            for name, imp in zip(feature_names_out, importance):
+                clean_name = name.replace('num__', '').replace('cat__', '')
+                # Buscar a qué feature original pertenece
+                for original_feat in FEATURES.keys():
+                    if original_feat in clean_name:
+                        temp_importance[original_feat] = max(temp_importance[original_feat], float(imp))
+                        break
+            
+            # Normalizar a porcentaje del total
+            total_imp = sum(temp_importance.values()) if temp_importance.values() else 1.0
+            if total_imp > 0:
+                for k in FEATURES:
+                    FEATURES[k]['importance'] = (temp_importance[k] / total_imp) * 100
+                    
+        except Exception as e:
+            print(f"Error actualizando importancia: {e}")
+
+# Actualizar importancia al cargar
+load_model()
+update_feature_importance()
 
 @app.route('/')
 def index():
-    """Serve the main HTML page"""
+    """Página HTML principal"""
     return send_from_directory('static', 'index.html')
-
-
-@app.route('/health')
-def health():
-    """Health check endpoint"""
-    return jsonify({
-        'status': 'healthy',
-        'model_loaded': model is not None or pipeline is not None,
-        'demo_mode': DEMO_MODE
-    })
-
 
 @app.route('/api/features')
 def get_features():
-    """Return feature metadata"""
+    """Devolver metadatos de las características"""
     return jsonify({
         'features': FEATURES,
         'feature_order': FEATURE_ORDER
@@ -164,104 +177,116 @@ def get_features():
 @app.route('/api/predict', methods=['POST'])
 def predict():
     """
-    Predict patient readmission risk
-    
-    Expected JSON payload:
-    {
-        "number_inpatient": 1,
-        "discharge_disposition_id": 1,
-        "number_emergency": 0,
-        "medical_specialty_Psychiatry": 0,
-        "diag_1_group_Musculoskeletal": 0,
-        "diag_2_group_Neoplasms": 0,
-        "medical_specialty_Oncology": 0,
-        "medical_specialty_PhysicalMedicineandRehabilitation": 0,
-        "insulin_Down": 0,
-        "diag_1_group_Circulatory": 1
-    }
+    Predecir el riesgo de readmisión del paciente
     """
     try:
-        # Get JSON data
+        # Verificar si el modelo está cargado
+        if model is None:
+            return jsonify({'error': 'El modelo no está cargado. Contacte al administrador.'}), 503
+
+        # Obtener datos JSON
         data = request.get_json()
         
         if not data:
-            return jsonify({'error': 'No data provided'}), 400
+            return jsonify({'error': 'No se proporcionaron datos'}), 400
         
-        # Validate all required features are present
+        # Validar que todas las características requeridas estén presentes
         missing_features = [f for f in FEATURE_ORDER if f not in data]
         if missing_features:
             return jsonify({
-                'error': 'Missing required features',
+                'error': 'Faltan características requeridas',
                 'missing': missing_features
             }), 400
         
-        # Validate feature values
-        errors = []
-        for feature_name in FEATURE_ORDER:
-            value = data[feature_name]
-            feature_meta = FEATURES[feature_name]
-            
-            # Check type
-            if not isinstance(value, (int, float)):
-                errors.append(f"{feature_name} must be a number")
-                continue
-            
-            # Check range
-            if value < feature_meta['min'] or value > feature_meta['max']:
-                errors.append(
-                    f"{feature_name} must be between {feature_meta['min']} and {feature_meta['max']}"
-                )
+        # Crear DataFrame para la predicción (el pipeline espera un DataFrame)
+        input_df = pd.DataFrame([data])
         
-        if errors:
-            return jsonify({'error': 'Validation failed', 'details': errors}), 400
+        # Realizar predicción con el modelo real
+        # Obtener probabilidades: [prob_clase_0, prob_clase_1]
+        probability = model.predict_proba(input_df)[0]
+        prob_score = probability[1]
         
-        # Prepare input array in correct order
-        input_array = np.array([[data[f] for f in FEATURE_ORDER]])
-        
-        # Make prediction
-        if DEMO_MODE:
-            # Demo mode: simulate prediction based on input features
-            # Calculate a risk score based on the features
-            risk_score = (
-                data['number_inpatient'] * 0.15 +
-                data['number_emergency'] * 0.13 +
-                (data['discharge_disposition_id'] > 5) * 0.1 +
-                data['medical_specialty_Psychiatry'] * 0.1 +
-                data['diag_1_group_Musculoskeletal'] * 0.05 +
-                data['diag_2_group_Neoplasms'] * 0.1 +
-                data['medical_specialty_Oncology'] * 0.1 +
-                data['medical_specialty_PhysicalMedicineandRehabilitation'] * 0.05 +
-                data['insulin_Down'] * 0.1 +
-                data['diag_1_group_Circulatory'] * 0.12
-            )
-            
-            # Normalize to 0-1 range
-            high_risk_prob = min(max(risk_score / 2.0, 0.1), 0.9)
-            low_risk_prob = 1.0 - high_risk_prob
-            
-            prediction = 1 if high_risk_prob > 0.5 else 0
-            probability = np.array([low_risk_prob, high_risk_prob])
-            
-        elif pipeline is not None:
-            prediction = pipeline.predict(input_array)[0]
-            probability = pipeline.predict_proba(input_array)[0]
-        elif model is not None:
-            prediction = model.predict(input_array)[0]
-            probability = model.predict_proba(input_array)[0]
+        # Lógica de 3 niveles de riesgo
+        if prob_score >= 0.70:
+            prediction = 2  # Alto Riesgo
+            risk_level = 'high'
+            prediction_label = 'Alto Riesgo de Readmisión'
+        elif prob_score >= 0.51:
+            prediction = 1  # Riesgo Medio
+            risk_level = 'medium'
+            prediction_label = 'Riesgo Medio de Readmisión'
         else:
-            return jsonify({'error': 'Model not loaded'}), 500
+            prediction = 0  # Bajo Riesgo
+            risk_level = 'low'
+            prediction_label = 'Bajo Riesgo de Readmisión'
+            
+        # --- EXPLICABILIDAD (SHAP) ---
+        try:
+            # 1. Transformar los datos de entrada usando el preprocesador del pipeline
+            # Accedemos al paso 'preprocessor' del pipeline
+            preprocessor = model.named_steps['preprocessor']
+            X_transformed = preprocessor.transform(input_df)
+            
+            # 2. Obtener nombres de características transformadas
+            feature_names = preprocessor.get_feature_names_out()
+            
+            # 3. Calcular valores SHAP
+            # Accedemos al modelo XGBoost dentro del pipeline
+            xgb_model = model.named_steps['xgb']
+            explainer = shap.TreeExplainer(xgb_model)
+            shap_values = explainer.shap_values(X_transformed)
+            
+            # shap_values puede ser una lista (para multiclase) o array. Para binaria suele ser array.
+            # Si es lista, tomamos el índice 1 (clase positiva)
+            if isinstance(shap_values, list):
+                vals = shap_values[1][0]
+            else:
+                vals = shap_values[0] # Para XGBoost binario a veces retorna directo
+                
+            # 4. Crear lista de impacto
+            # Mapear nombres limpios (remover prefijos de OneHotEncoder si es posible para mejor visualización)
+            impact_list = []
+            for name, val in zip(feature_names, vals):
+                # Limpiar nombres un poco para el frontend
+                clean_name = name.replace('num__', '').replace('cat__', '')
+                # Traducir/Mejorar nombres comunes
+                if 'number_inpatient' in clean_name: clean_name = 'Visitas Hospitalarias'
+                elif 'number_emergency' in clean_name: clean_name = 'Visitas Emergencia'
+                elif 'time_in_hospital' in clean_name: clean_name = 'Días en Hospital'
+                elif 'age' in clean_name: clean_name = 'Edad'
+                elif 'discharge_segment' in clean_name: clean_name = 'Tipo de Alta'
+                elif 'number_diagnoses' in clean_name: clean_name = 'Num. Diagnósticos'
+                elif 'diabetesMed' in clean_name: clean_name = 'Medicación Diabetes'
+                elif 'metformin' in clean_name: clean_name = 'Metformina'
+                elif 'diag_1' in clean_name: clean_name = 'Diag. Primario'
+                elif 'diag_2' in clean_name: clean_name = 'Diag. Secundario'
+                
+                impact_list.append({
+                    'feature': clean_name,
+                    'impact': float(val), # Convertir numpy.float32 a float nativo
+                    'abs_impact': float(abs(val)) # Convertir numpy.float32 a float nativo
+                })
+            
+            # Ordenar por impacto absoluto y tomar los top 5
+            impact_list.sort(key=lambda x: x['abs_impact'], reverse=True)
+            top_features = impact_list[:5]
+            
+        except Exception as e:
+            print(f"Error calculando SHAP: {e}")
+            top_features = []
         
-        # Prepare response
+        # Preparar respuesta
         result = {
             'prediction': int(prediction),
-            'prediction_label': 'High Risk' if prediction == 1 else 'Low Risk',
+            'risk_level': risk_level,
+            'prediction_label': prediction_label,
             'probability': {
                 'low_risk': float(probability[0]),
                 'high_risk': float(probability[1])
             },
             'risk_percentage': float(probability[1] * 100),
             'input_features': data,
-            'demo_mode': DEMO_MODE
+            'top_features': top_features, # Agregamos los factores clave
         }
         
         return jsonify(result)
@@ -272,13 +297,11 @@ def predict():
 
 if __name__ == '__main__':
     print("\n" + "="*60)
-    print("🏥 Patient Readmission Prediction API")
+    print("API de Predicción de Readmisión de Pacientes")
     print("="*60)
-    print(f"Model loaded: {model is not None or pipeline is not None}")
-    if DEMO_MODE:
-        print("⚠️  DEMO MODE: Using simulated predictions")
-    print(f"Number of features: {len(FEATURE_ORDER)} (Top 10 most important)")
-    print(f"\nStarting server on http://localhost:5001")
+    print(f"Modelo cargado: {model is not None}")
+    print(f"Número de características: {len(FEATURE_ORDER)}")
+    print(f"\nIniciando servidor en http://localhost:5001")
     print("="*60 + "\n")
     
     app.run(debug=True, host='0.0.0.0', port=5001)
