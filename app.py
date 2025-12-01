@@ -174,6 +174,101 @@ def get_features():
     })
 
 
+@app.route('/api/shap_plot', methods=['POST'])
+def generate_shap_plot():
+    """
+    Generar gráfico SHAP waterfall interactivo como HTML
+    """
+    try:
+        # Verificar si el modelo está cargado
+        if model is None:
+            return jsonify({'error': 'El modelo no está cargado. Contacte al administrador.'}), 503
+
+        # Obtener datos JSON
+        data = request.get_json()
+        
+        if not data:
+            return jsonify({'error': 'No se proporcionaron datos'}), 400
+        
+        # Validar que todas las características requeridas estén presentes
+        missing_features = [f for f in FEATURE_ORDER if f not in data]
+        if missing_features:
+            return jsonify({
+                'error': 'Faltan características requeridas',
+                'missing': missing_features
+            }), 400
+        
+        # Crear DataFrame para la predicción
+        input_df = pd.DataFrame([data])
+        
+        # Transformar datos usando el preprocesador
+        preprocessor = model.named_steps['preprocessor']
+        X_transformed = preprocessor.transform(input_df)
+        
+        # Obtener modelo XGBoost y calcular SHAP
+        xgb_model = model.named_steps['xgb']
+        explainer = shap.TreeExplainer(xgb_model)
+        shap_values = explainer.shap_values(X_transformed)
+        
+        # Manejar diferentes formatos de shap_values
+        if isinstance(shap_values, list):
+            shap_vals = shap_values[1][0]
+        else:
+            shap_vals = shap_values[0]
+        
+        # Crear objeto Explanation para waterfall plot
+        feature_names = preprocessor.get_feature_names_out()
+        base_value = explainer.expected_value
+        if isinstance(base_value, np.ndarray):
+            base_value = base_value[1] if len(base_value) > 1 else base_value[0]
+        
+        # Crear explicación SHAP
+        explanation = shap.Explanation(
+            values=shap_vals,
+            base_values=base_value,
+            data=X_transformed[0],
+            feature_names=feature_names
+        )
+        
+        # Generar waterfall plot y convertir a HTML
+        import matplotlib
+        matplotlib.use('Agg')  # Backend sin GUI
+        import matplotlib.pyplot as plt
+        from io import BytesIO
+        import base64
+        
+        # Crear figura
+        plt.figure(figsize=(10, 6), facecolor='white')
+        shap.plots.waterfall(explanation, show=False)
+        
+        # Guardar figura como base64
+        buffer = BytesIO()
+        plt.savefig(buffer, format='png', dpi=150, bbox_inches='tight', facecolor='white')
+        buffer.seek(0)
+        image_base64 = base64.b64encode(buffer.read()).decode()
+        plt.close()
+        
+        # Crear HTML con la imagen embebida
+        html_content = f'''
+        <div style="width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; background: transparent;">
+            <img src="data:image/png;base64,{image_base64}" 
+                 style="max-width: 100%; height: auto; border-radius: 12px;"
+                 alt="SHAP Waterfall Plot">
+        </div>
+        '''
+        
+        return jsonify({
+            'html': html_content,
+            'base_value': float(base_value)
+        })
+        
+    except Exception as e:
+        print(f"Error generando gráfico SHAP: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/predict', methods=['POST'])
 def predict():
     """
@@ -221,6 +316,7 @@ def predict():
             prediction_label = 'Bajo Riesgo de Readmisión'
             
         # --- EXPLICABILIDAD (SHAP) ---
+        shap_base_value = None
         try:
             # 1. Transformar los datos de entrada usando el preprocesador del pipeline
             # Accedemos al paso 'preprocessor' del pipeline
@@ -235,6 +331,13 @@ def predict():
             xgb_model = model.named_steps['xgb']
             explainer = shap.TreeExplainer(xgb_model)
             shap_values = explainer.shap_values(X_transformed)
+            
+            # Obtener base value para el frontend
+            base_value = explainer.expected_value
+            if isinstance(base_value, np.ndarray):
+                shap_base_value = float(base_value[1] if len(base_value) > 1 else base_value[0])
+            else:
+                shap_base_value = float(base_value)
             
             # shap_values puede ser una lista (para multiclase) o array. Para binaria suele ser array.
             # Si es lista, tomamos el índice 1 (clase positiva)
@@ -287,6 +390,7 @@ def predict():
             'risk_percentage': float(probability[1] * 100),
             'input_features': data,
             'top_features': top_features, # Agregamos los factores clave
+            'shap_base_value': shap_base_value, # Valor base de SHAP
         }
         
         return jsonify(result)

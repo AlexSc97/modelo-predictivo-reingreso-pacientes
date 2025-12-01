@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Modelo Predictivo de Reingreso de Pacientes</title>
+    <title>Modelo Predictivo para pacientes con Readmisión temprana</title>
     <link rel="stylesheet" href="/static/style.css?v=12">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -18,7 +18,7 @@
     <div class="grid-overlay"></div>
 
     <div class="app-container">
-        <!-- Sidebar Navigation -->
+        <!-- Barra de navegacion -->
         <aside class="sidebar">
             <div class="brand">
                 <span class="material-icons-round brand-icon">auto_awesome</span>
@@ -59,7 +59,7 @@
             <div class="sidebar-footer">
                 <div class="model-status">
                     <span class="status-dot"></span>
-                    Modelo XGBoost
+                    Modelo entrenado con XGBoost
                 </div>
             </div>
         </aside>
@@ -284,6 +284,22 @@
                                         style="font-size: 1rem; vertical-align: middle; margin-right: 5px;">refresh</span>
                                     Nueva Predicción
                                 </button>
+                            </div>
+                        </div>
+
+                        <!-- SHAP Visualization Card -->
+                        <div class="shap-visualization-card full-width-card">
+                            <h3><span class="material-icons-round">insights</span> Análisis SHAP Detallado</h3>
+                            <p class="shap-description">
+                                Este gráfico muestra cómo cada característica del paciente contribuye a la predicción
+                                final.
+                                Las barras rojas aumentan el riesgo, las azules lo reducen.
+                            </p>
+                            <div class="shap-plot-container" id="shapPlotContainer">
+                                <div class="loading-spinner">
+                                    <span class="material-icons-round spin">sync</span>
+                                    <p>Generando visualización SHAP...</p>
+                                </div>
                             </div>
                         </div>
                     </div>

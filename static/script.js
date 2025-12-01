@@ -234,11 +234,12 @@ function displayResults(data) {
         circle.setAttribute('stroke-dasharray', `${riskPercent}, 100`);
 
         const outcomeElement = document.getElementById('predictionOutcome');
-        if (data.risk_score >= 0.51) {
-            outcomeElement.textContent = "PREDICCIÓN: EL PACIENTE REINGRESARÁ";
+        // Usamos la probabilidad de alto riesgo devuelta por la API
+        if (data.probability.high_risk >= 0.51) {
+            outcomeElement.textContent = "PREDICCIÓN: EL PACIENTE SERÁ READMITIDO";
             outcomeElement.style.color = 'var(--danger)';
         } else {
-            outcomeElement.textContent = "PREDICCIÓN: EL PACIENTE NO REINGRESARÁ";
+            outcomeElement.textContent = "PREDICCIÓN: EL PACIENTE NO SERÁ READMITIDO";
             outcomeElement.style.color = 'var(--success)';
         }
 
@@ -303,6 +304,38 @@ function displayResults(data) {
         recText.innerHTML = "<strong>Precaución:</strong> Existe un riesgo moderado. Se sugiere programar una cita de seguimiento en los próximos 7 días y reforzar la educación del paciente sobre los signos de alarma. Revisar posibles interacciones medicamentosas.";
     } else {
         recText.innerHTML = "<strong>Bajo Riesgo:</strong> El paciente puede continuar con el plan de alta estándar. Se recomienda mantener las citas de control habituales y fomentar hábitos de vida saludables. Riesgo bajo de readmisión en 30 días.";
+    }
+
+    // Cargar gráfico SHAP
+    loadShapPlot(data.input_features);
+}
+
+async function loadShapPlot(inputFeatures) {
+    const shapContainer = document.getElementById('shapPlotContainer');
+
+    try {
+        const response = await fetch(`${API_BASE_URL}/api/shap_plot`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(inputFeatures)
+        });
+
+        const shapData = await response.json();
+
+        if (!response.ok) throw new Error(shapData.error || 'Error generando SHAP plot');
+
+        // Insertar HTML del gráfico con animación
+        shapContainer.innerHTML = shapData.html;
+        shapContainer.classList.add('loaded');
+
+    } catch (error) {
+        console.error('Error cargando SHAP plot:', error);
+        shapContainer.innerHTML = `
+            <div class="error-message">
+                <span class="material-icons-round">error_outline</span>
+                <p>No se pudo generar el gráfico SHAP. ${error.message}</p>
+            </div>
+        `;
     }
 }
 

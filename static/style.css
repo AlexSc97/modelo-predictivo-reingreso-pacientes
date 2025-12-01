@@ -839,6 +839,201 @@ output {
 /* Reset Button in Results */
 .btn-reset {
     margin-top: 1rem;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+}
+
+.btn-icon:hover {
+    background: #f9fafb;
+    transform: scale(1.05);
+}
+
+/* Results Grid Layout */
+.results-grid {
+    display: grid;
+    grid-template-columns: 1fr 1.5fr;
+    grid-template-rows: auto auto;
+    gap: 1.5rem;
+    height: 100%;
+    overflow-y: auto;
+    /* Allow scrolling if content is tall */
+    padding-bottom: 2rem;
+}
+
+.risk-card {
+    grid-column: 1;
+    grid-row: 1;
+    background: white;
+    border-radius: var(--radius-md);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+    box-shadow: var(--shadow-card);
+    min-height: 300px;
+}
+
+.analysis-card {
+    grid-column: 2;
+    grid-row: 1;
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 1.5rem;
+    box-shadow: var(--shadow-card);
+    display: flex;
+    flex-direction: column;
+}
+
+.full-width-card {
+    grid-column: 1 / -1;
+    /* Span full width */
+    grid-row: 2;
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    box-shadow: var(--shadow-card);
+    margin-top: 1rem;
+}
+
+.risk-circle-wrapper {
+    width: 200px;
+    height: 200px;
+    position: relative;
+}
+
+.risk-circle {
+    transform: rotate(-90deg);
+    width: 100%;
+    height: 100%;
+}
+
+.circle-bg {
+    fill: none;
+    stroke: rgba(0, 0, 0, 0.05);
+    stroke-width: 2.5;
+}
+
+.circle-fill {
+    fill: none;
+    stroke: var(--primary);
+    stroke-width: 2.5;
+    stroke-linecap: round;
+    transition: stroke-dasharray 1.5s ease;
+}
+
+.risk-value {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+#riskPercentage {
+    font-size: 3rem;
+    font-weight: 700;
+    display: block;
+    color: var(--text-main);
+}
+
+.risk-label-text {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.risk-status {
+    margin-top: 1.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+}
+
+.analysis-card h3,
+.recommendation-card h3 {
+    font-size: 1rem;
+    color: var(--text-muted);
+    margin-bottom: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+/* Factors Chart Styling */
+.factors-chart-container {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.factors-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+}
+
+.factor-item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.factor-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--text-main);
+}
+
+.factor-value {
+    font-weight: 700;
+    color: var(--primary);
+}
+
+.factor-bar-bg {
+    width: 100%;
+    height: 10px;
+    background: rgba(0, 0, 0, 0.05);
+    border-radius: 10px;
+    overflow: hidden;
+}
+
+.factor-bar-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--primary), var(--accent));
+    border-radius: 10px;
+    width: 0;
+    /* Start at 0 for animation */
+    transition: width 1s ease-out;
+}
+
+/* Report Content */
+.report-content {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--text-main);
+    background: #f9fafb;
+    padding: 1.5rem;
+    border-radius: var(--radius-sm);
+    border-left: 4px solid var(--primary);
+}
+
+.action-area {
+    margin-top: 2rem;
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* Reset Button in Results */
+.btn-reset {
+    margin-top: 1rem;
     width: 100%;
     background: rgba(0, 0, 0, 0.05);
     color: var(--text-main);
@@ -846,6 +1041,89 @@ output {
 
 .btn-reset:hover {
     background: rgba(0, 0, 0, 0.1);
+}
+
+/* SHAP Visualization Styles */
+.shap-visualization-card {
+    grid-column: 1 / -1;
+    grid-row: 3;
+    background: white;
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    box-shadow: var(--shadow-card);
+    margin-top: 1rem;
+}
+
+.shap-description {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    margin-bottom: 1.5rem;
+    line-height: 1.5;
+}
+
+.shap-plot-container {
+    min-height: 400px;
+    background: #f9fafb;
+    border-radius: var(--radius-md);
+    padding: 2rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border: 1px solid rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.shap-plot-container.loaded {
+    animation: fadeInScale 0.5s ease;
+}
+
+@keyframes fadeInScale {
+    from {
+        opacity: 0;
+        transform: scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: scale(1);
+    }
+}
+
+.loading-spinner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--text-muted);
+}
+
+.loading-spinner .spin {
+    animation: rotate 1s linear infinite;
+    font-size: 3rem;
+    color: var(--primary);
+}
+
+@keyframes rotate {
+    from {
+        transform: rotate(0deg);
+    }
+
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+.error-message {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    color: var(--danger);
+    text-align: center;
+}
+
+.error-message .material-icons-round {
+    font-size: 3rem;
 }
 
 /* Responsive */
@@ -893,8 +1171,14 @@ output {
 
     .risk-card,
     .analysis-card,
-    .full-width-card {
+    .full-width-card,
+    .shap-visualization-card {
         grid-column: 1;
         grid-row: auto;
+    }
+
+    .shap-plot-container {
+        min-height: 300px;
+        padding: 1rem;
     }
 }
