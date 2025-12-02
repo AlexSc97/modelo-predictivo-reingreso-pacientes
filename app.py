@@ -205,6 +205,10 @@ def generate_shap_plot():
         preprocessor = model.named_steps['preprocessor']
         X_transformed = preprocessor.transform(input_df)
         
+        # Convertir a denso si es disperso (para evitar errores con SHAP)
+        if hasattr(X_transformed, "toarray"):
+            X_transformed = X_transformed.toarray()
+        
         # Obtener modelo XGBoost y calcular SHAP
         xgb_model = model.named_steps['xgb']
         explainer = shap.TreeExplainer(xgb_model)
@@ -322,6 +326,10 @@ def predict():
             # Accedemos al paso 'preprocessor' del pipeline
             preprocessor = model.named_steps['preprocessor']
             X_transformed = preprocessor.transform(input_df)
+            
+            # Convertir a denso si es disperso
+            if hasattr(X_transformed, "toarray"):
+                X_transformed = X_transformed.toarray()
             
             # 2. Obtener nombres de características transformadas
             feature_names = preprocessor.get_feature_names_out()

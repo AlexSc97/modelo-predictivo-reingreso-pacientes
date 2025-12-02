@@ -1172,13 +1172,691 @@ output {
     .risk-card,
     .analysis-card,
     .full-width-card,
+
+    .factor-item {
+        display: flex;
+        flex-direction: column;
+        gap: 0.4rem;
+    }
+
+    .factor-header {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.9rem;
+        font-weight: 500;
+        color: var(--text-main);
+    }
+
+    .factor-value {
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    .factor-bar-bg {
+        width: 100%;
+        height: 10px;
+        background: rgba(0, 0, 0, 0.05);
+        border-radius: 10px;
+        overflow: hidden;
+    }
+
+    .factor-bar-fill {
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary), var(--accent));
+        border-radius: 10px;
+        width: 0;
+        /* Start at 0 for animation */
+        transition: width 1s ease-out;
+    }
+
+    /* Report Content */
+    .report-content {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: var(--text-main);
+        background: #f9fafb;
+        padding: 1.5rem;
+        border-radius: var(--radius-sm);
+        border-left: 4px solid var(--primary);
+    }
+
+    .action-area {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* Reset Button in Results */
+    .btn-reset {
+        margin-top: 1rem;
+        width: 100%;
+        background: rgba(0, 0, 0, 0.05);
+        color: var(--text-main);
+    }
+
+    .btn-reset:hover {
+        background: rgba(0, 0, 0, 0.1);
+    }
+
+    /* SHAP Visualization Styles */
     .shap-visualization-card {
-        grid-column: 1;
-        grid-row: auto;
+        grid-column: 1 / -1;
+        grid-row: 3;
+        background: white;
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        box-shadow: var(--shadow-card);
+        margin-top: 1rem;
+    }
+
+    .shap-description {
+        font-size: 0.9rem;
+        color: var(--text-muted);
+        margin-bottom: 1.5rem;
+        line-height: 1.5;
     }
 
     .shap-plot-container {
-        min-height: 300px;
-        padding: 1rem;
+        min-height: 400px;
+        background: #f9fafb;
+        border-radius: var(--radius-md);
+        padding: 2rem;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
     }
-}
+
+    .shap-plot-container.loaded {
+        animation: fadeInScale 0.5s ease;
+    }
+
+    @keyframes fadeInScale {
+        from {
+            opacity: 0;
+            transform: scale(0.95);
+        }
+
+        to {
+            opacity: 1;
+            transform: scale(1);
+        }
+    }
+
+    .loading-spinner {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        color: var(--text-muted);
+    }
+
+    .loading-spinner .spin {
+        animation: rotate 1s linear infinite;
+        font-size: 3rem;
+        color: var(--primary);
+    }
+
+    @keyframes rotate {
+        from {
+            transform: rotate(0deg);
+        }
+
+        to {
+            transform: rotate(360deg);
+        }
+    }
+
+    .error-message {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        color: var(--danger);
+        text-align: center;
+    }
+
+    .error-message .material-icons-round {
+        font-size: 3rem;
+    }
+
+    /* Responsive */
+    @media (max-width: 1024px) {
+        .app-container {
+            flex-direction: column;
+            height: 100vh;
+            width: 100vw;
+            border-radius: 0;
+        }
+
+        .sidebar {
+            width: 100%;
+            height: 80px;
+            flex-direction: row;
+            align-items: center;
+            padding: 1rem;
+        }
+
+        .brand {
+            margin-bottom: 0;
+            margin-right: 2rem;
+        }
+
+        .stepper {
+            flex-direction: row;
+        }
+
+        .step-content {
+            display: none;
+        }
+
+        .sidebar-footer {
+            display: none;
+        }
+
+        .main-content {
+            padding: 1rem;
+        }
+
+        .results-grid {
+            grid-template-columns: 1fr;
+            grid-template-rows: auto;
+        }
+
+        .risk-card,
+        .analysis-card,
+        .full-width-card,
+        .factor-item {
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+
+        .factor-header {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--text-main);
+        }
+
+        .factor-value {
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .factor-bar-bg {
+            width: 100%;
+            height: 10px;
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .factor-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 10px;
+            width: 0;
+            /* Start at 0 for animation */
+            transition: width 1s ease-out;
+        }
+
+        /* Report Content */
+        .report-content {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-main);
+            background: #f9fafb;
+            padding: 1.5rem;
+            border-radius: var(--radius-sm);
+            border-left: 4px solid var(--primary);
+        }
+
+        .action-area {
+            margin-top: 2rem;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        /* Reset Button in Results */
+        .btn-reset {
+            margin-top: 1rem;
+            width: 100%;
+            background: rgba(0, 0, 0, 0.05);
+            color: var(--text-main);
+        }
+
+        .btn-reset:hover {
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        /* SHAP Visualization Styles */
+        .shap-visualization-card {
+            grid-column: 1 / -1;
+            grid-row: 3;
+            background: white;
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            box-shadow: var(--shadow-card);
+            margin-top: 1rem;
+        }
+
+        .shap-description {
+            font-size: 0.9rem;
+            color: var(--text-muted);
+            margin-bottom: 1.5rem;
+            line-height: 1.5;
+        }
+
+        .shap-plot-container {
+            min-height: 400px;
+            background: #f9fafb;
+            border-radius: var(--radius-md);
+            padding: 2rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .shap-plot-container.loaded {
+            animation: fadeInScale 0.5s ease;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.95);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .loading-spinner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: var(--text-muted);
+        }
+
+        .loading-spinner .spin {
+            animation: rotate 1s linear infinite;
+            font-size: 3rem;
+            color: var(--primary);
+        }
+
+        @keyframes rotate {
+            from {
+                transform: rotate(0deg);
+            }
+
+            to {
+                transform: rotate(360deg);
+            }
+        }
+
+        .error-message {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1rem;
+            color: var(--danger);
+            text-align: center;
+        }
+
+        .error-message .material-icons-round {
+            font-size: 3rem;
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .app-container {
+                flex-direction: column;
+                height: 100vh;
+                width: 100vw;
+                border-radius: 0;
+            }
+
+            .sidebar {
+                width: 100%;
+                height: 80px;
+                flex-direction: row;
+                align-items: center;
+                padding: 1rem;
+            }
+
+            .brand {
+                margin-bottom: 0;
+                margin-right: 2rem;
+            }
+
+            .stepper {
+                flex-direction: row;
+            }
+
+            .step-content {
+                display: none;
+            }
+
+            .sidebar-footer {
+                display: none;
+            }
+
+            .main-content {
+                padding: 1rem;
+            }
+
+            .results-grid {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto;
+            }
+
+            .risk-card,
+            .analysis-card,
+            .full-width-card,
+            .shap-visualization-card {
+                grid-column: 1;
+                grid-row: auto;
+            }
+
+            .shap-plot-container {
+                min-height: 300px;
+                padding: 1rem;
+                display: flex;
+                justify-content: space-between;
+                font-size: 0.9rem;
+                font-weight: 500;
+                color: var(--text-main);
+            }
+
+            .factor-value {
+                font-weight: 700;
+                color: var(--primary);
+            }
+
+            .factor-bar-bg {
+                width: 100%;
+                height: 10px;
+                background: rgba(0, 0, 0, 0.05);
+                border-radius: 10px;
+                overflow: hidden;
+            }
+
+            .factor-bar-fill {
+                height: 100%;
+                background: linear-gradient(90deg, var(--primary), var(--accent));
+                border-radius: 10px;
+                width: 0;
+                /* Start at 0 for animation */
+                transition: width 1s ease-out;
+            }
+
+            /* Report Content */
+            .report-content {
+                font-size: 1rem;
+                line-height: 1.6;
+                color: var(--text-main);
+                background: #f9fafb;
+                padding: 1.5rem;
+                border-radius: var(--radius-sm);
+                border-left: 4px solid var(--primary);
+            }
+
+            .action-area {
+                margin-top: 2rem;
+                display: flex;
+                justify-content: flex-end;
+            }
+
+            /* Reset Button in Results */
+            .btn-reset {
+                margin-top: 1rem;
+                width: 100%;
+                background: rgba(0, 0, 0, 0.05);
+                color: var(--text-main);
+            }
+
+            .btn-reset:hover {
+                background: rgba(0, 0, 0, 0.1);
+            }
+
+            /* SHAP Visualization Styles */
+            .shap-visualization-card {
+                grid-column: 1 / -1;
+                grid-row: 3;
+                background: white;
+                border-radius: var(--radius-md);
+                padding: 2rem;
+                box-shadow: var(--shadow-card);
+                margin-top: 1rem;
+            }
+
+            .shap-description {
+                font-size: 0.9rem;
+                color: var(--text-muted);
+                margin-bottom: 1.5rem;
+                line-height: 1.5;
+            }
+
+            .shap-plot-container {
+                min-height: 400px;
+                background: #f9fafb;
+                border-radius: var(--radius-md);
+                padding: 2rem;
+                display: flex;
+                justify-content: center;
+                align-items: center;
+                border: 1px solid rgba(0, 0, 0, 0.05);
+                transition: all 0.3s ease;
+            }
+
+            .shap-plot-container.loaded {
+                animation: fadeInScale 0.5s ease;
+            }
+
+            @keyframes fadeInScale {
+                from {
+                    opacity: 0;
+                    transform: scale(0.95);
+                }
+
+                to {
+                    opacity: 1;
+                    transform: scale(1);
+                }
+            }
+
+            .loading-spinner {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                color: var(--text-muted);
+            }
+
+            .loading-spinner .spin {
+                animation: rotate 1s linear infinite;
+                font-size: 3rem;
+                color: var(--primary);
+            }
+
+            @keyframes rotate {
+                from {
+                    transform: rotate(0deg);
+                }
+
+                to {
+                    transform: rotate(360deg);
+                }
+            }
+
+            .error-message {
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+                gap: 1rem;
+                color: var(--danger);
+                text-align: center;
+            }
+
+            .error-message .material-icons-round {
+                font-size: 3rem;
+            }
+
+            /* Responsive */
+            @media (max-width: 1024px) {
+                .app-container {
+                    flex-direction: column;
+                    height: 100vh;
+                    width: 100vw;
+                    border-radius: 0;
+                }
+
+                .sidebar {
+                    width: 100%;
+                    height: 80px;
+                    flex-direction: row;
+                    align-items: center;
+                    padding: 1rem;
+                }
+
+                .brand {
+                    margin-bottom: 0;
+                    margin-right: 2rem;
+                }
+
+                .stepper {
+                    flex-direction: row;
+                }
+
+                .step-content {
+                    display: none;
+                }
+
+                .sidebar-footer {
+                    display: none;
+                }
+
+                .main-content {
+                    padding: 1rem;
+                }
+
+                .results-grid {
+                    grid-template-columns: 1fr;
+                    grid-template-rows: auto;
+                }
+
+                .risk-card,
+                .analysis-card,
+                .full-width-card,
+                .shap-visualization-card {
+                    grid-column: 1;
+                    grid-row: auto;
+                }
+
+                .shap-plot-container {
+                    min-height: 300px;
+                    padding: 1rem;
+                }
+            }
+
+            /* --- New Styles for SHAP Legend and Improved Interactions --- */
+
+            /* SHAP Legend */
+            .shap-legend {
+                display: flex;
+                justify-content: center;
+                gap: 2rem;
+                margin-bottom: 1.5rem;
+                padding: 0.8rem;
+                background: rgba(255, 255, 255, 0.6);
+                border-radius: var(--radius-md);
+                width: fit-content;
+                margin-left: auto;
+                margin-right: auto;
+                border: 1px solid rgba(255, 255, 255, 0.8);
+                box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+            }
+
+            .legend-item {
+                display: flex;
+                align-items: center;
+                gap: 0.8rem;
+                font-size: 0.9rem;
+                color: var(--text-main);
+                font-weight: 500;
+            }
+
+            .legend-color {
+                width: 30px;
+                height: 12px;
+                border-radius: 4px;
+                display: block;
+                flex-shrink: 0;
+            }
+
+            .color-red {
+                background: linear-gradient(90deg, #ff0d57, #ff5e8d);
+                box-shadow: 0 2px 4px rgba(255, 13, 87, 0.2);
+            }
+
+            .color-blue {
+                background: linear-gradient(90deg, #1e88e5, #6ab7ff);
+                box-shadow: 0 2px 4px rgba(30, 136, 229, 0.2);
+            }
+
+            /* Animated Select Wrapper for Secondary Diagnosis */
+            .select-wrapper-animated {
+                position: relative;
+                width: 100%;
+            }
+
+            .disabled-overlay {
+                position: absolute;
+                top: 0;
+                left: 0;
+                width: 100%;
+                height: 100%;
+                background: rgba(240, 242, 245, 0.7);
+                backdrop-filter: blur(1px);
+                border-radius: var(--radius-md);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                gap: 0.5rem;
+                color: var(--text-muted);
+                font-weight: 600;
+                opacity: 0;
+                pointer-events: none;
+                transition: all 0.3s ease;
+                z-index: 10;
+            }
+
+            .disabled-input .disabled-overlay {
+                opacity: 1;
+                pointer-events: auto;
+            }
+
+            /* Small Toggle Adjustments */
+            .small-toggle label {
+                width: 40px;
+                height: 22px;
+            }
+
+            .small-toggle label::after {
+                width: 16px;
+                height: 16px;
+                top: 3px;
+                left: 3px;
+            }
+
+            .small-toggle input:checked+label::after {
+                left: 21px;
+            }

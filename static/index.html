@@ -5,7 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Modelo Predictivo para pacientes con Readmisión temprana</title>
-    <link rel="stylesheet" href="/static/style.css?v=12">
+    <link rel="stylesheet" href="/static/style.css?v=14">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -21,8 +21,7 @@
         <!-- Barra de navegacion -->
         <aside class="sidebar">
             <div class="brand">
-                <span class="material-icons-round brand-icon">auto_awesome</span>
-                <span class="brand-text">Modelo Predictivo</span>
+                <span class="brand-text">Modelo Predictivo de Readmisión Temprana</span>
             </div>
 
             <nav class="stepper">
@@ -178,18 +177,33 @@
                                     </select>
                                 </div>
                                 <div class="input-group" id="group_diag_2_group">
-                                    <label>Diagnóstico Secundario</label>
-                                    <select id="diag_2_group" name="diag_2_group" class="custom-select">
-                                        <option value="Diabetes">Diabetes</option>
-                                        <option value="Circulatory">Circulatorio</option>
-                                        <option value="Respiratory">Respiratorio</option>
-                                        <option value="Digestive">Digestivo</option>
-                                        <option value="Injury">Lesión</option>
-                                        <option value="Musculoskeletal">Musculoesquelético</option>
-                                        <option value="Genitourinary">Genitourinario</option>
-                                        <option value="Neoplasms">Neoplasias</option>
-                                        <option value="Other">Otro</option>
-                                    </select>
+                                    <div
+                                        style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;">
+                                        <label style="margin-bottom: 0;">Diagnóstico Secundario</label>
+                                        <div class="toggle-switch small-toggle">
+                                            <input type="checkbox" id="no_diag_2_checkbox">
+                                            <label for="no_diag_2_checkbox"></label>
+                                            <span class="toggle-label"
+                                                style="font-size: 0.85rem; color: var(--text-muted);">Ninguno</span>
+                                        </div>
+                                    </div>
+                                    <div class="select-wrapper-animated">
+                                        <select id="diag_2_group" name="diag_2_group" class="custom-select">
+                                            <option value="Diabetes">Diabetes</option>
+                                            <option value="Circulatory">Circulatorio</option>
+                                            <option value="Respiratory">Respiratorio</option>
+                                            <option value="Digestive">Digestivo</option>
+                                            <option value="Injury">Lesión</option>
+                                            <option value="Musculoskeletal">Musculoesquelético</option>
+                                            <option value="Genitourinary">Genitourinario</option>
+                                            <option value="Neoplasms">Neoplasias</option>
+                                            <option value="Other">Otro</option>
+                                        </select>
+                                        <div class="disabled-overlay">
+                                            <span class="material-icons-round">block</span>
+                                            <span>No Aplica</span>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
@@ -293,8 +307,19 @@
                             <p class="shap-description">
                                 Este gráfico muestra cómo cada característica del paciente contribuye a la predicción
                                 final.
-                                Las barras rojas aumentan el riesgo, las azules lo reducen.
                             </p>
+
+                            <div class="shap-legend">
+                                <div class="legend-item">
+                                    <div class="legend-color color-red"></div>
+                                    <span>Aumenta el Riesgo</span>
+                                </div>
+                                <div class="legend-item">
+                                    <div class="legend-color color-blue"></div>
+                                    <span>Disminuye el Riesgo</span>
+                                </div>
+                            </div>
+
                             <div class="shap-plot-container" id="shapPlotContainer">
                                 <div class="loading-spinner">
                                     <span class="material-icons-round spin">sync</span>
@@ -308,7 +333,7 @@
         </main>
     </div>
 
-    <script src="/static/script.js?v=12"></script>
+    <script src="/static/script.js?v=13"></script>
 </body>
 
 </html>

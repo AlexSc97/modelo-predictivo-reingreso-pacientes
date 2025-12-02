@@ -110,6 +110,23 @@ function setupEventListeners() {
             diabetesInput.value = e.target.checked ? 'Yes' : 'No';
         });
     }
+
+    // Logic for No Secondary Diagnosis
+    const noDiag2Checkbox = document.getElementById('no_diag_2_checkbox');
+    const diag2Select = document.getElementById('diag_2_group');
+
+    if (noDiag2Checkbox && diag2Select) {
+        noDiag2Checkbox.addEventListener('change', (e) => {
+            const wrapper = diag2Select.closest('.select-wrapper-animated');
+            if (e.target.checked) {
+                diag2Select.disabled = true;
+                if (wrapper) wrapper.classList.add('disabled-input');
+            } else {
+                diag2Select.disabled = false;
+                if (wrapper) wrapper.classList.remove('disabled-input');
+            }
+        });
+    }
 }
 
 function resetApp() {
@@ -125,6 +142,15 @@ function resetApp() {
         const input = out.previousElementSibling.querySelector('input');
         if (input) out.textContent = input.min || 0;
     });
+
+    // Reset Diag 2 state
+    const diag2Select = document.getElementById('diag_2_group');
+    if (diag2Select) {
+        diag2Select.disabled = false;
+        diag2Select.style.opacity = '1';
+        const wrapper = diag2Select.closest('.select-wrapper-animated');
+        if (wrapper) wrapper.classList.remove('disabled-input');
+    }
 }
 
 function updateWizard() {
@@ -218,6 +244,13 @@ function collectFormData() {
             data[key] = value;
         }
     }
+
+    // Handle No Secondary Diagnosis Checkbox
+    const noDiag2Checkbox = document.getElementById('no_diag_2_checkbox');
+    if (noDiag2Checkbox && noDiag2Checkbox.checked) {
+        data['diag_2_group'] = 'None';
+    }
+
     return data;
 }
 
