@@ -238,7 +238,7 @@ function collectFormData() {
     const formData = new FormData(form);
 
     for (let [key, value] of formData.entries()) {
-        if (['number_inpatient', 'number_emergency', 'time_in_hospital', 'number_diagnoses', 'age'].includes(key)) {
+        if (['number_inpatient', 'number_emergency', 'time_in_hospital', 'number_diagnoses', 'num_procedures'].includes(key)) {
             data[key] = parseInt(value);
         } else {
             data[key] = value;

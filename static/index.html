@@ -102,6 +102,14 @@
                                         <output>1</output>
                                     </div>
                                 </div>
+                                <div class="input-group" id="group_num_procedures">
+                                    <label>Procedimientos Realizados</label>
+                                    <div class="range-wrapper">
+                                        <input type="range" id="num_procedures" name="num_procedures" min="0" max="10"
+                                            value="0" oninput="this.nextElementSibling.value = this.value">
+                                        <output>0</output>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
@@ -112,16 +120,31 @@
                                 <div class="input-group" id="group_age">
                                     <label>Edad Aproximada</label>
                                     <select id="age" name="age" class="custom-select">
-                                        <option value="5">0-10 años</option>
-                                        <option value="15">10-20 años</option>
-                                        <option value="25">20-30 años</option>
-                                        <option value="35">30-40 años</option>
-                                        <option value="45">40-50 años</option>
-                                        <option value="55">50-60 años</option>
-                                        <option value="65">60-70 años</option>
-                                        <option value="75">70-80 años</option>
-                                        <option value="85">80-90 años</option>
-                                        <option value="95">90+ años</option>
+                                        <option value="[0-10)">0-10 años</option>
+                                        <option value="[10-20)">10-20 años</option>
+                                        <option value="[20-30)">20-30 años</option>
+                                        <option value="[30-40)">30-40 años</option>
+                                        <option value="[40-50)">40-50 años</option>
+                                        <option value="[50-60)">50-60 años</option>
+                                        <option value="[60-70)">60-70 años</option>
+                                        <option value="[70-80)">70-80 años</option>
+                                        <option value="[80-90)">80-90 años</option>
+                                        <option value="[90-100)">90+ años</option>
+                                    </select>
+                                </div>
+                                <div class="input-group" id="group_weight">
+                                    <label>Peso</label>
+                                    <select id="weight" name="weight" class="custom-select">
+                                        <option value="?">No Disponible</option>
+                                        <option value="[0-25)">0-25 kg</option>
+                                        <option value="[25-50)">25-50 kg</option>
+                                        <option value="[50-75)">50-75 kg</option>
+                                        <option value="[75-100)">75-100 kg</option>
+                                        <option value="[100-125)">100-125 kg</option>
+                                        <option value="[125-150)">125-150 kg</option>
+                                        <option value="[150-175)">150-175 kg</option>
+                                        <option value="[175-200)">175-200 kg</option>
+                                        <option value=">200">> 200 kg</option>
                                     </select>
                                 </div>
                                 <div class="input-group" id="group_discharge_segment">
@@ -208,9 +231,9 @@
                             </div>
                         </div>
 
-                        <!-- Step 4: Medicación -->
+                        <!-- Step 4: Medicación y Labs -->
                         <div class="wizard-step" id="step4">
-                            <h2 class="step-header">Medicación</h2>
+                            <h2 class="step-header">Medicación y Resultados</h2>
                             <div class="input-grid">
                                 <div class="input-group" id="group_diabetesMed">
                                     <label>Medicación Diabetes</label>
@@ -221,6 +244,15 @@
                                     </div>
                                     <input type="hidden" id="diabetesMed" name="diabetesMed" value="No">
                                 </div>
+                                <div class="input-group" id="group_insulin">
+                                    <label>Insulina</label>
+                                    <select id="insulin" name="insulin" class="custom-select">
+                                        <option value="No">No usa</option>
+                                        <option value="Steady">Estable</option>
+                                        <option value="Up">Aumentó Dosis</option>
+                                        <option value="Down">Redujo Dosis</option>
+                                    </select>
+                                </div>
                                 <div class="input-group" id="group_metformin">
                                     <label>Metformina</label>
                                     <select id="metformin" name="metformin" class="custom-select">
@@ -228,6 +260,15 @@
                                         <option value="Steady">Estable</option>
                                         <option value="Up">Aumentó Dosis</option>
                                         <option value="Down">Redujo Dosis</option>
+                                    </select>
+                                </div>
+                                <div class="input-group" id="group_A1Cresult">
+                                    <label>Resultado A1C</label>
+                                    <select id="A1Cresult" name="A1Cresult" class="custom-select">
+                                        <option value="None">No realizado</option>
+                                        <option value="Norm">Normal</option>
+                                        <option value=">7">Mayor a 7%</option>
+                                        <option value=">8">Mayor a 8%</option>
                                     </select>
                                 </div>
                             </div>
